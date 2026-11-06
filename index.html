@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MINSTER DRAFT · mini — St. Mary's Minster Erection Drawing Set RW-14</title>
+<style>
+:root{--ink:#1d2a3a;--paper:#f6f2e8;--line:#23324a;--accent:#b3541e}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#d9d4c7;color:var(--ink)}
+header{position:sticky;top:0;z-index:5;background:#1d2a3a;color:#f6f2e8;padding:10px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+header h1{font-size:17px;margin:0;letter-spacing:.08em}
+header h1 small{font-weight:400;opacity:.7;letter-spacing:0;margin-left:6px}
+.ctrl{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:12.5px}
+.ctrl label{display:flex;flex-direction:column;gap:2px;min-width:118px}
+.ctrl label span{display:flex;justify-content:space-between}
+.ctrl label b{color:#f3c27a;font-weight:600}
+.ctrl input[type=range]{width:118px}
+.btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+button{font:inherit;font-size:13px;border:1px solid #f6f2e8;background:transparent;color:#f6f2e8;padding:6px 12px;border-radius:5px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent)}
+button.on{background:#f6f2e8;color:#1d2a3a}
+#stage{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:6;background:rgba(29,42,58,.92);color:#fff;padding:8px 18px;border-radius:20px;font-size:14px;letter-spacing:.05em;opacity:0;transition:opacity .4s;pointer-events:none}
+#stage.show{opacity:1}
+main{padding:18px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));max-width:1800px;margin:0 auto}
+.sheet{background:var(--paper);box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.sheet svg{display:block;width:100%;height:auto}
+svg text{font-family:"Consolas","Courier New",monospace;fill:var(--line)}
+.frame{fill:none;stroke:var(--line);stroke-width:1.2}
+.thin{fill:none;stroke:var(--line);stroke-width:.6}
+.dim{stroke:#7a2e14;stroke-width:.55;fill:none}
+.dimt{fill:#7a2e14;font-size:10px}
+.grid{stroke:#7d8aa0;stroke-width:.4;stroke-dasharray:6 3 1 3;fill:none}
+.lbl{font-size:10.5px}
+.ttl{font-size:15px;font-weight:700;letter-spacing:.06em}
+/* model geometry */
+.g{stroke:var(--line);stroke-width:1;stroke-linejoin:round;fill:none;transition:fill .8s,stroke .8s,stroke-width .6s}
+.hid{stroke-dasharray:4 3;stroke-width:.6}
+.cut{stroke-width:1.6}
+.st{stroke-width:.8}
+/* stage 1: wire */
+.mode-wire .g{fill:none}
+.mode-wire .st{stroke:#5a6a85}
+.mode-wire .cutfill,.mode-wire .rfx{opacity:0}
+/* stage 2: structure */
+.mode-struct .cut{fill:url(#hatch)}
+.mode-struct .st{stroke:#b3541e;stroke-width:1.6}
+.mode-struct .face{fill:rgba(246,242,232,.9)}
+.mode-struct .rfx{opacity:0}
+/* stage 3: render */
+.mode-render .wall{fill:url(#brick)}
+.mode-render .wall.dark{fill:url(#brickD)}
+.mode-render .roof{fill:url(#copper)}
+.mode-render .roof.dark{fill:url(#copperD)}
+.mode-render .glass{fill:#2c3d52}
+.mode-render .stone{fill:#d8cfb8}
+.mode-render .cut{fill:url(#brickD)}
+.mode-render .cut.roof{fill:url(#copperD)}
+.mode-render .st{stroke:#6b4a2a}
+.mode-render .ground{fill:#9db07f}
+.mode-render .rfx{opacity:1}
+.rfx{transition:opacity .8s}
+.cutfill{transition:opacity .8s}
+.mode-render .face{}
+/* draw-on animation */
+.drawing .g{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 2.2s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.drawing .g.hid{animation:none;stroke-dasharray:4 3}
+table.sch{border-collapse:collapse}
+@media print{
+ header,#stage{display:none}
+ body{background:#fff}
+ main{display:block;padding:0}
+ .sheet{box-shadow:none;page-break-after:always;break-after:page;width:100%}
+ @page{size:A3 landscape;margin:8mm}
+}
+</style>
+</head>
+<body class="mode-render">
+<header>
+ <h1>MINSTER DRAFT <small>mini · 参数化哥特式砖砌教堂图集 RW-14</small></h1>
+ <div class="ctrl" id="ctrl"></div>
+ <div class="btns">
+  <button id="bWire">线框</button><button id="bStruct">结构剖面</button><button id="bRender" class="on">上色渲染</button>
+  <button id="play" class="primary">▶ 演示播放</button>
+  <button id="print">🖨 打印 / 导出 PDF</button>
+ </div>
+</header>
+<div id="stage"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <defs>
+  <pattern id="brick" patternUnits="userSpaceOnUse" width="14" height="7">
+   <rect width="14" height="7" fill="#b4563b"/>
+   <path d="M0 0H14M0 3.5H14M4 0V3.5M11 3.5V7" stroke="#8c3c27" stroke-width=".6"/>
+  </pattern>
+  <pattern id="brickD" patternUnits="userSpaceOnUse" width="14" height="7">
+   <rect width="14" height="7" fill="#8f3f2a"/>
+   <path d="M0 0H14M0 3.5H14M4 0V3.5M11 3.5V7" stroke="#6a2b1b" stroke-width=".6"/>
+  </pattern>
+  <pattern id="copper" patternUnits="userSpaceOnUse" width="9" height="9">
+   <rect width="9" height="9" fill="#5fa58e"/>
+   <path d="M0 0V9" stroke="#3f7d6a" stroke-width="1"/>
+  </pattern>
+  <pattern id="copperD" patternUnits="userSpaceOnUse" width="9" height="9">
+   <rect width="9" height="9" fill="#457f6c"/>
+   <path d="M0 0V9" stroke="#2f6050" stroke-width="1"/>
+  </pattern>
+  <pattern id="hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+   <rect width="6" height="6" fill="#f3e3d3"/>
+   <path d="M0 0V6" stroke="#b3541e" stroke-width="1"/>
+  </pattern>
+  <pattern id="earth" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(-45)">
+   <path d="M0 0V10M4 0V10" stroke="#8a7f6d" stroke-width=".5"/>
+  </pattern>
+ </defs>
+</svg>
+<main id="sheets"></main>
+
+<script>
+// ---------- parameters ----------
+const P = {
+ towerH:{label:"塔高(至女儿墙)",min:22,max:60,step:1,v:36,u:"m"},
+ bays:{label:"开间数",min:3,max:10,step:1,v:6,u:""},
+ bayW:{label:"开间宽",min:4,max:7,step:.5,v:5.5,u:"m"},
+ naveW:{label:"中殿宽",min:8,max:16,step:.5,v:11,u:"m"},
+ wallH:{label:"檐口高",min:9,max:22,step:.5,v:15,u:"m"},
+ pitch:{label:"屋顶坡度",min:35,max:65,step:1,v:55,u:"°"}
+};
+const ctrl=document.getElementById("ctrl");
+for(const k in P){const p=P[k];const l=document.createElement("label");
+ l.innerHTML=`<span>${p.label}<b id="v_${k}">${p.v}${p.u}</b></span><input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.v}" id="i_${k}">`;
+ ctrl.appendChild(l);
+ l.querySelector("input").addEventListener("input",e=>{p.v=+e.target.value;document.getElementById("v_"+k).textContent=p.v+p.u;draw();});}
+
+// ---------- helpers ----------
+const f1=n=>(Math.round(n*100)/100).toLocaleString("en-US");
+const pts=a=>a.map(p=>p[0].toFixed(2)+","+p[1].toFixed(2)).join(" ");
+const poly=(a,cls,extra="")=>`<polygon pathLength="1" class="g ${cls}" points="${pts(a)}" ${extra}/>`;
+const pl=(a,cls)=>`<polyline pathLength="1" class="g ${cls}" points="${pts(a)}"/>`;
+const ln=(x1,y1,x2,y2,cls)=>`<line pathLength="1" class="g ${cls}" x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}"/>`;
+const txt=(x,y,s,cls="lbl",anchor="middle",rot=0)=>`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" class="${cls}" text-anchor="${anchor}"${rot?` transform="rotate(${rot} ${x.toFixed(1)} ${y.toFixed(1)})"`:""}>${s}</text>`;
+// lancet (equilateral pointed arch) outline in local (u, z) coords: left edge u0, width w, sill z0, total height h
+function lancet(u0,w,z0,h,n=8){const r=w, rise=w*Math.sqrt(3)/2, zs=z0+h-rise, out=[[u0,z0],[u0,zs]];
+ for(let i=1;i<=n;i++){const a=Math.PI/3*i/n; out.push([u0+w-r*Math.cos(a), zs+r*Math.sin(a)]);}
+ for(let i=n-1;i>=0;i--){const a=Math.PI/3*i/n; out.push([u0+r*Math.cos(a), zs+r*Math.sin(a)]);}
+ out.push([u0+w,z0]);return out;}
+// dimension line between two sheet points, offset perpendicular (in sheet units)
+function dim(x1,y1,x2,y2,off,label){
+ const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;
+ const a=[x1+nx*off,y1+ny*off],b=[x2+nx*off,y2+ny*off];
+ const e=Math.sign(off)*4;
+ let s=`<path class="dim" d="M${x1+nx*2*Math.sign(off)},${y1+ny*2*Math.sign(off)}L${a[0]+nx*e},${a[1]+ny*e}M${x2+nx*2*Math.sign(off)},${y2+ny*2*Math.sign(off)}L${b[0]+nx*e},${b[1]+ny*e}M${a[0]},${a[1]}L${b[0]},${b[1]}"/>`;
+ for(const p of [a,b]) s+=`<path class="dim" style="stroke-width:1.1" d="M${p[0]-3},${p[1]+3}L${p[0]+3},${p[1]-3}"/>`;
+ let ang=Math.atan2(dy,dx)*180/Math.PI; if(ang>90)ang-=180; if(ang<-90)ang+=180;
+ const mx=(a[0]+b[0])/2+nx*(off>0?9:-3), my=(a[1]+b[1])/2+ny*(off>0?9:-3);
+ return s+txt(mx,my,label,"dimt","middle",ang);}
+// sheet frame and title block. returns {svg, area:{x,y,w,h}}
+const W=1189,H=841;
+function sheet(no,title,scale,body){
+ const tb=`<g>
+ <rect class="frame" x="12" y="12" width="${W-24}" height="${H-24}"/>
+ <rect class="thin" x="18" y="18" width="${W-36}" height="${H-36}"/>
+ ${[0,1,2,3,4,5,6,7].map(i=>txt(18+ (W-36)/8*(i+.5),15,i+1,"lbl")).join("")}
+ <rect class="frame" x="${W-438}" y="${H-138}" width="420" height="120"/>
+ <line class="thin" x1="${W-438}" y1="${H-104}" x2="${W-18}" y2="${H-104}"/>
+ <line class="thin" x1="${W-438}" y1="${H-72}" x2="${W-18}" y2="${H-72}"/>
+ <line class="thin" x1="${W-438}" y1="${H-45}" x2="${W-18}" y2="${H-45}"/>
+ <line class="thin" x1="${W-228}" y1="${H-72}" x2="${W-228}" y2="${H-18}"/>
+ <line class="thin" x1="${W-120}" y1="${H-72}" x2="${W-120}" y2="${H-18}"/>
+ ${txt(W-428,H-114,"MINSTER DRAFT","ttl","start")}
+ ${txt(W-28,H-114,"DRAWING SET RW-14","lbl","end")}
+ ${txt(W-428,H-82,"ST. MARY'S MINSTER (MINI) — "+title,"lbl","start")}
+ ${txt(W-428,H-55,"SCALE "+scale,"lbl","start")}${txt(W-218,H-55,"DATE 2026-11-06","lbl","start")}${txt(W-110,H-55,"REV A","lbl","start")}
+ ${txt(W-428,H-27,"DRAWN: AUTO · CHK: —","lbl","start")}${txt(W-218,H-27,"BRICK / Cu ROOF","lbl","start")}${txt(W-110,H-27,"SHEET "+no,"lbl","start")}
+ </g>`;
+ return `<section class="sheet"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${body}${tb}</svg></section>`;}
+// fit: maps model extent to drawing area, returns s (sheet units per metre) and nice scale text
+function fit(ew,eh,area){const s=Math.min(area.w/ew,area.h/eh)*.94; const r=1000/s;
+ const nice=[50,60,75,80,90,100,110,125,140,150,175,200,225,250,300,350,400,500].find(n=>n>=r)||Math.round(r); return {s:1000/nice,scaleTxt:"1:"+nice+" @A1"};}
+const AREA={x:40,y:40,w:W-80,h:H-200};
+
+// ---------- geometry ----------
+function model(){
+ const n=P.bays.v,bw=P.bayW.v,L=n*bw,Wn=P.naveW.v,Hw=P.wallH.v,pt=P.pitch.v*Math.PI/180;
+ const rise=Wn/2*Math.tan(pt), ridge=Hw+rise, T=Math.max(7,Wn*.78), Ht=Math.max(P.towerH.v,ridge+4), spire=Ht*.62;
+ const t=Math.max(.9,Wn*.08), bd=1.2+Hw*.05; // wall thickness, buttress depth
+ return {n,bw,L,Wn,Hw,pt,rise,ridge,T,Ht,spire,t,bd,tip:Ht+spire};}
+
+// ---------- sheet 1: isometric erection plan ----------
+function sheetIso(m){
+ const c=Math.cos(Math.PI/6),sn=Math.sin(Math.PI/6);
+ const xT0=m.L, xT1=m.L+m.T, y0=(m.Wn-m.T)/2, y1=y0+m.T;
+ const P3=(x,y,z)=>[(x-y)*c,(x+y)*sn-z];
+ // extent
+ const all=[P3(0,0,0),P3(xT1,m.Wn,0),P3(0,m.Wn,0),P3(xT1,0,0),P3((xT0+xT1)/2,m.Wn/2,m.tip),P3(0,0,m.ridge),P3(0,m.Wn+m.bd,0)];
+ const xs=all.map(p=>p[0]),ys=all.map(p=>p[1]);
+ const mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys);
+ const F=fit(mxx-mnx,mxy-mny,AREA), s=F.s;
+ const ox=AREA.x+(AREA.w-(mxx-mnx)*s)/2-mnx*s, oy=AREA.y+(AREA.h-(mxy-mny)*s)/2-mny*s+10;
+ const Q=(x,y,z)=>{const p=P3(x,y,z);return [ox+p[0]*s,oy+p[1]*s];};
+ const box=(x0,x1,ya,yb,z0,z1,cls)=>{ // draw visible faces: top, front (y=yb), east (x=x1)
+  return poly([Q(x0,yb,z0),Q(x1,yb,z0),Q(x1,yb,z1),Q(x0,yb,z1)],cls)+
+         poly([Q(x1,ya,z0),Q(x1,yb,z0),Q(x1,yb,z1),Q(x1,ya,z1)],cls+" dark")+
+         poly([Q(x0,ya,z1),Q(x1,ya,z1),Q(x1,yb,z1),Q(x0,yb,z1)],cls.replace("wall","stone"));};
+ let g="";
+ // ground slab
+ g+=poly([Q(-3,-3,0),Q(xT1+4,-3,0),Q(xT1+4,m.Wn+m.bd+4,0),Q(-3,m.Wn+m.bd+4,0)],"ground thin st");
+ // hidden back lines
+ g+=ln(...Q(0,0,0),...Q(m.L,0,0),"hid")+ln(...Q(0,0,0),...Q(0,0,m.Hw),"hid");
+ // west gable (x=0) visible? not from this view; back roof slope
+ g+=poly([Q(0,0,m.Hw),Q(m.L,0,m.Hw),Q(m.L,m.Wn/2,m.ridge),Q(0,m.Wn/2,m.ridge)],"roof dark");
+ // front wall y=Wn
+ g+=poly([Q(0,m.Wn,0),Q(m.L,m.Wn,0),Q(m.L,m.Wn,m.Hw),Q(0,m.Wn,m.Hw)],"wall face");
+ // west end wall x=0 seen edge-on-ish: draw gable outline on x=0 (back-left)
+ g+=poly([Q(0,0,0),Q(0,m.Wn,0),Q(0,m.Wn,m.Hw),Q(0,m.Wn/2,m.ridge),Q(0,0,m.Hw)],"wall dark face");
+ g+=poly([Q(0,m.Wn,0),Q(m.L,m.Wn,0),Q(m.L,m.Wn,m.Hw),Q(0,m.Wn,m.Hw)],"wall face");
+ // windows on front wall
+ for(let i=0;i<m.n;i++){const w=m.bw*.36,u=i*m.bw+(m.bw-w)/2;
+  g+=poly(lancet(u,w,m.Hw*.28,m.Hw*.58).map(([uu,z])=>Q(uu,m.Wn,z)),"glass");}
+ // front roof slope
+ g+=poly([Q(0,m.Wn,m.Hw),Q(m.L,m.Wn,m.Hw),Q(m.L,m.Wn/2,m.ridge),Q(0,m.Wn/2,m.ridge)],"roof");
+ // structure: trusses (visible through in wire/struct)
+ for(let i=0;i<=m.n;i++){const x=i*m.bw;g+=pl([Q(x,0,m.Hw),Q(x,m.Wn/2,m.ridge),Q(x,m.Wn,m.Hw),Q(x,0,m.Hw)],"st hid");}
+ // buttresses on front wall at bay lines
+ for(let i=0;i<=m.n;i++){const x=Math.min(Math.max(i*m.bw-.5,0),m.L-1);
+  g+=box(x,x+1,m.Wn,m.Wn+m.bd,0,m.Hw*.82,"wall");
+  g+=poly([Q(x,m.Wn,m.Hw*.82),Q(x+1,m.Wn,m.Hw*.82),Q(x+1,m.Wn+m.bd,m.Hw*.82),Q(x+1,m.Wn,m.Hw*.98),Q(x,m.Wn,m.Hw*.98)],"stone");}
+ // tower
+ g+=box(xT0,xT1,y0,y1,0,m.Ht,"wall");
+ // belfry openings on tower front & east
+ const bw2=m.T*.22;
+ for(const k of [0,1]){const u=m.T*(k?0.58:0.2);
+  g+=poly(lancet(u,bw2,m.Ht*.72,m.Ht*.2).map(([uu,z])=>Q(xT0+uu,y1,z)),"glass");
+  g+=poly(lancet(u,bw2,m.Ht*.72,m.Ht*.2).map(([uu,z])=>Q(xT1,y0+uu,z)),"glass");}
+ // door
+ g+=poly(lancet(m.T*.35,m.T*.3,0,m.Ht*.17).map(([uu,z])=>Q(xT0+uu,y1,z)),"glass");
+ // spire (pyramid) faces visible: front and east
+ const tip=Q((xT0+xT1)/2,(y0+y1)/2,m.tip);
+ g+=poly([Q(xT0+.6,y0+.6,m.Ht),Q(xT1-.6,y0+.6,m.Ht),tip],"roof dark")+poly([Q(xT0+.6,y0+.6,m.Ht),Q(xT0+.6,y1-.6,m.Ht),tip],"roof dark");
+ g+=poly([Q(xT0+.6,y1-.6,m.Ht),Q(xT1-.6,y1-.6,m.Ht),tip],"roof")+poly([Q(xT1-.6,y0+.6,m.Ht),Q(xT1-.6,y1-.6,m.Ht),tip],"roof dark");
+ // corner pinnacles
+ for(const [px,py] of [[xT0,y1],[xT1,y1],[xT1,y0]]){const cx=px+(px===xT0?.5:-.5),cy=py+(py===y0?.5:-.5);
+  g+=poly([Q(cx-.5,cy,m.Ht),Q(cx+.5,cy,m.Ht),Q(cx,cy,m.Ht+m.spire*.18)],"roof");}
+ // grid labels at bay lines
+ for(let i=0;i<=m.n;i++){const p=Q(i*m.bw,m.Wn+m.bd+3,0);g+=`<circle class="thin" cx="${p[0]}" cy="${p[1]+8}" r="8"/>`+txt(p[0],p[1]+11.5,i+1,"lbl");}
+ // dims
+ g+=dim(...Q(0,m.Wn+m.bd+1.5,0),...Q(m.L,m.Wn+m.bd+1.5,0),18,`NAVE ${f1(m.L)} m (${m.n}×${f1(m.bw)})`);
+ const tb=Q(xT1,y0,0),tt=Q(xT1,y0,m.Ht),ts=Q(xT1,y0,m.tip);
+ g+=dim(tb[0],tb[1],tt[0],tt[1],-26,`${f1(m.Ht)} m`)+dim(tt[0],tt[1],ts[0],ts[1],-26,`+${f1(m.spire)}`);
+ g+=txt(...Q(m.L*.45,m.Wn/2,m.ridge+1.5),"COPPER ROOF "+P.pitch.v+"°","lbl rfx");
+ g+=txt(AREA.x,AREA.y+4,"ERECTION PLAN — ISOMETRIC WIREFRAME","ttl","start")+txt(AREA.x,AREA.y+22,"Assembly sequence: ① foundations & buttress footings ② nave walls ③ trusses ④ tower ⑤ spire & Cu roofing","lbl","start");
+ return sheet("RW-14-01","ERECTION PLAN (ISO)","N.T.S. (iso)",g);}
+
+// ---------- sheet 2: ground plan + member schedule ----------
+function sheetPlan(m){
+ const ew=m.L+m.T+6, eh=m.Wn+2*m.bd+8, area={x:AREA.x,y:AREA.y+20,w:AREA.w*.6,h:AREA.h-20};
+ const F=fit(ew,eh,area), s=F.s, ox=area.x+(area.w-ew*s)/2+3*s, oy=area.y+(area.h-eh*s)/2+(m.bd+4)*s;
+ const X=x=>ox+x*s, Y=y=>oy+y*s;
+ const R=(x0,y0,x1,y1,cls)=>poly([[X(x0),Y(y0)],[X(x1),Y(y0)],[X(x1),Y(y1)],[X(x0),Y(y1)]],cls);
+ let g="";
+ // grid lines
+ for(let i=0;i<=m.n;i++){const x=X(i*m.bw);g+=`<line class="grid" x1="${x}" y1="${Y(-m.bd-3)}" x2="${x}" y2="${Y(m.Wn+m.bd+3)}"/><circle class="thin" cx="${x}" cy="${Y(-m.bd-3)-9}" r="8"/>`+txt(x,Y(-m.bd-3)-5.5,i+1);}
+ for(const [y,l] of [[0,"A"],[m.Wn,"B"]]) g+=`<line class="grid" x1="${X(-3)}" y1="${Y(y)}" x2="${X(m.L+m.T+2)}" y2="${Y(y)}"/><circle class="thin" cx="${X(-3)-9}" cy="${Y(y)}" r="8"/>`+txt(X(-3)-9,Y(y)+3.5,l);
+ // walls (cut)
+ const t=m.t;
+ g+=R(-t/2,-t/2,m.L,t/2,"cut wall")+R(-t/2,m.Wn-t/2,m.L,m.Wn+t/2,"cut wall")+R(-t/2,-t/2,t/2,m.Wn+t/2,"cut wall");
+ for(let i=0;i<=m.n;i++){const x=Math.min(Math.max(i*m.bw,0.5),m.L-0.5);g+=R(x-.5,-t/2-m.bd,x+.5,-t/2,"cut wall")+R(x-.5,m.Wn+t/2,x+.5,m.Wn+t/2+m.bd,"cut wall");}
+ // window openings (gaps drawn as glass lines)
+ for(let i=0;i<m.n;i++){const w=m.bw*.36,u=i*m.bw+(m.bw-w)/2;for(const y of [0,m.Wn]) g+=R(u,y-t/2,u+w,y+t/2,"glass");}
+ // tower
+ const y0=(m.Wn-m.T)/2,y1=y0+m.T,tt=t*1.3;
+ g+=R(m.L,y0,m.L+m.T,y0+tt,"cut wall")+R(m.L,y1-tt,m.L+m.T,y1,"cut wall")+R(m.L+m.T-tt,y0,m.L+m.T,y1,"cut wall");
+ g+=R(m.L,y0,m.L+tt,y0+m.T*.35,"cut wall")+R(m.L,y1-m.T*.35,m.L+tt,y1,"cut wall");
+ g+=R(m.L+m.T-tt,m.Wn/2-m.T*.15,m.L+m.T,m.Wn/2+m.T*.15,"glass");
+ // nave floor pattern / altar
+ g+=R(m.bw*.3,m.Wn*.35,m.bw*.9,m.Wn*.65,"stone");
+ g+=txt(X(m.L/2),Y(m.Wn/2)+4,"NAVE","lbl")+txt(X(m.L+m.T/2),Y(m.Wn/2)+4,"TOWER","lbl")+txt(X(m.bw*.6),Y(m.Wn*.65)+14,"ALTAR","lbl");
+ // section line A-A at mid bay
+ const xa=X(Math.floor(m.n/2)*m.bw+m.bw/2);
+ g+=`<path d="M${xa},${Y(-m.bd-1.5)}V${Y(m.Wn+m.bd+1.5)}" stroke="#b3541e" stroke-width="1.2" stroke-dasharray="14 4 3 4"/>`;
+ for(const y of [Y(-m.bd-1.5),Y(m.Wn+m.bd+1.5)]) g+=`<path d="M${xa},${y}h-14l5,-4m-5,4l5,4" stroke="#b3541e" fill="none" stroke-width="1.4"/>`+txt(xa+12,y+4,"A","ttl");
+ // dims
+ g+=dim(X(0),Y(m.Wn+m.bd+3),X(m.L),Y(m.Wn+m.bd+3),24,`${f1(m.L)}`)+dim(X(m.L),Y(m.Wn+m.bd+3),X(m.L+m.T),Y(m.Wn+m.bd+3),24,`${f1(m.T)}`);
+ g+=dim(X(0),Y(m.Wn+m.bd+3),X(m.bw),Y(m.Wn+m.bd+3),8,`${f1(m.bw)}`);
+ g+=dim(X(m.L+m.T+2),Y(0),X(m.L+m.T+2),Y(m.Wn),-20,`${f1(m.Wn)}`);
+ g+=txt(AREA.x,AREA.y+4,"GROUND PLAN","ttl","start")+txt(AREA.x+130,AREA.y+4,"scale "+F.scaleTxt,"lbl","start");
+ // north arrow
+ const nx=area.x+area.w-30,ny=area.y+30;g+=`<circle class="thin" cx="${nx}" cy="${ny}" r="16"/><path d="M${nx},${ny-16}l7,26l-7,-6l-7,6z" fill="#23324a"/>`+txt(nx,ny-21,"N","lbl");
+ // schedule table
+ g+=schedule(m,AREA.x+AREA.w*.64,AREA.y+20,AREA.w*.36);
+ return sheet("RW-14-02","GROUND PLAN + SCHEDULE",F.scaleTxt,g);}
+
+function calc(m){
+ const win=m.bw*.36*m.Hw*.58*.85, nWin=2*m.n, nBut=2*(m.n+1);
+ const naveWall=(2*m.L*m.Hw + m.Wn*m.Hw + m.Wn*m.rise/2 - nWin*win)*m.t;
+ const towerWall=4*m.T*m.Ht*m.t*1.3 - 8*m.T*.22*m.Ht*.2*.85*m.t*1.3;
+ const but=nBut*1*m.bd*m.Hw*.86;
+ const bricks=(naveWall+towerWall+but)*595; // ~595 bricks / m3 (215x102.5x65 + 10mm joints)
+ const raft=m.Wn/2/Math.cos(m.pt);
+ const roof=2*m.L*raft, slant=Math.hypot(m.T/2-.6,m.spire), spireA=4*(m.T-1.2)*slant/2;
+ return [
+  ["01","Brick masonry — nave walls",f1(naveWall)+" m³"],
+  ["02","Brick masonry — tower",f1(towerWall)+" m³"],
+  ["03","Buttresses (brick, stone caps)",nBut+" no. · "+f1(but)+" m³"],
+  ["04","Facing bricks (est., 595/m³)",Math.round(bricks/1000)+"k no."],
+  ["05","Roof trusses, oak, scissor",(m.n+1)+" no. · rafter "+f1(raft)+" m"],
+  ["06","Copper sheet — nave roof",f1(roof)+" m²"],
+  ["07","Copper sheet — spire",f1(spireA)+" m²"],
+  ["08","Lancet windows, nave",nWin+" no."],
+  ["09","Belfry louvres",8+" no."],
+  ["10","Ridge / spire tip height",f1(m.ridge)+" / "+f1(m.tip)+" m"]];}
+function schedule(m,x,y,w){
+ const rows=calc(m), rh=24; let g=`<g transform="translate(${x},${y})">`;
+ g+=txt(0,4,"MEMBER SCHEDULE","ttl","start")+txt(0,20,"auto-calculated from parameters · estimate only","lbl","start");
+ const c=[0,38,w*.62,w]; const top=32;
+ g+=`<rect class="frame" x="0" y="${top}" width="${w}" height="${rh*(rows.length+1)}"/>`;
+ g+=`<rect x="0" y="${top}" width="${w}" height="${rh}" fill="#23324a"/>`;
+ [["MK",c[0]],["DESCRIPTION",c[1]],["QTY",c[2]]].forEach(([h,cx])=>g+=`<text x="${cx+6}" y="${top+16}" style="fill:#f6f2e8;font-size:11px;font-weight:700">${h}</text>`);
+ rows.forEach((r,i)=>{const yy=top+rh*(i+1);g+=`<line class="thin" x1="0" y1="${yy}" x2="${w}" y2="${yy}"/>`;
+  r.forEach((v,j)=>g+=txt(c[j]+6,yy+16,v,"lbl","start"));});
+ for(const cx of [c[1],c[2]]) g+=`<line class="thin" x1="${cx}" y1="${top}" x2="${cx}" y2="${top+rh*(rows.length+1)}"/>`;
+ g+=txt(0,top+rh*(rows.length+1)+20,"NOTES: 1. Dimensions in metres. 2. Section A-A see RW-14-03.","lbl","start");
+ g+=txt(0,top+rh*(rows.length+1)+36,"3. Brick: 215×102.5×65 red clay. 4. Roof: 0.7 mm Cu, standing seam.","lbl","start");
+ return g+"</g>";}
+
+// ---------- sheet 3: section A-A ----------
+function sheetSection(m){
+ const ew=m.Wn+2*m.t+2*m.bd+10, eh=m.ridge+4+3;
+ const F=fit(ew,eh,AREA), s=F.s, cx=AREA.x+AREA.w/2, gy=AREA.y+AREA.h-50;
+ const X=u=>cx+u*s, Z=z=>gy-z*s; const hw=m.Wn/2, t=m.t;
+ let g="";
+ // ground & foundations
+ g+=`<rect x="${X(-hw-t-m.bd-5)}" y="${Z(0)}" width="${(m.Wn+2*t+2*m.bd+10)*s}" height="${2.4*s}" fill="url(#earth)" class="cutfill"/>`;
+ g+=ln(X(-hw-t-m.bd-5),Z(0),X(hw+t+m.bd+5),Z(0),"cut");
+ for(const sg of [-1,1]){const xi=sg*hw, xo=sg*(hw+t);
+  // footing
+  g+=poly([[X(xi-sg*.4),Z(0)],[X(xo+sg*(m.bd+.6)),Z(0)],[X(xo+sg*(m.bd+.6)),Z(-1.8)],[X(xi-sg*.4),Z(-1.8)]],"cut stone");
+  // wall cut
+  g+=poly([[X(xi),Z(0)],[X(xo),Z(0)],[X(xo),Z(m.Hw)],[X(xi),Z(m.Hw)]],"cut wall");
+  // buttress beyond (elevation, not cut)
+  g+=poly([[X(xo),Z(0)],[X(xo+sg*m.bd),Z(0)],[X(xo+sg*m.bd),Z(m.Hw*.55)],[X(xo+sg*m.bd*.6),Z(m.Hw*.7)],[X(xo+sg*m.bd*.6),Z(m.Hw*.82)],[X(xo),Z(m.Hw*.95)]],"wall dark");
+  // wall plate
+  g+=poly([[X(xi),Z(m.Hw)],[X(xo),Z(m.Hw)],[X(xo),Z(m.Hw+.35)],[X(xi),Z(m.Hw+.35)]],"st");}
+ // stone rib vault (pointed) springing at 0.62 Hw
+ const sp=m.Hw*.62, r=m.Wn*.62, ap=sp+Math.sqrt(r*r-(r-hw)*(r-hw));
+ g+=`<path pathLength="1" class="g st" d="M${X(-hw)},${Z(sp)} A${r*s},${r*s} 0 0 1 ${X(0)},${Z(ap)} A${r*s},${r*s} 0 0 1 ${X(hw)},${Z(sp)}"/>`;
+ g+=`<path pathLength="1" class="g stone" d="M${X(-hw)},${Z(sp)} A${r*s},${r*s} 0 0 1 ${X(0)},${Z(ap)} A${r*s},${r*s} 0 0 1 ${X(hw)},${Z(sp)} L${X(hw)},${Z(sp-.5)} A${(r-.5)*s},${(r-.5)*s} 0 0 0 ${X(0)},${Z(ap-.5)} A${(r-.5)*s},${(r-.5)*s} 0 0 0 ${X(-hw)},${Z(sp-.5)}Z"/>`;
+ // window beyond (elevation of opposite bay) — lancet on inside face
+ const w=m.bw*.36; g+=poly(lancet(-w/2,w,m.Hw*.28,Math.min(m.Hw*.58,sp-.6)).map(([u,z])=>[X(u),Z(z)]),"glass hid");
+ // roof: rafters with copper covering (cut)
+ const eo=t+.6, zr=m.ridge+.3;
+ const roofL=[[X(-hw-eo),Z(m.Hw+.35-Math.tan(m.pt)*(eo-t))],[X(0),Z(zr)]];
+ const th=.6;
+ g+=poly([roofL[0],roofL[1],[X(0),Z(zr+th)],[X(-hw-eo),Z(m.Hw+.35-Math.tan(m.pt)*(eo-t)+th)]],"cut roof");
+ g+=poly([[X(hw+eo),roofL[0][1]],roofL[1],[X(0),Z(zr+th)],[X(hw+eo),Z(m.Hw+.35-Math.tan(m.pt)*(eo-t)+th)]],"cut roof");
+ // scissor truss
+ const zP=m.Hw+.35, k=.5;
+ g+=pl([[X(-hw-t/2),Z(zP)],[X(0),Z(m.ridge)],[X(hw+t/2),Z(zP)]],"st");
+ g+=ln(X(-hw-t/2),Z(zP),X(hw*k),Z(zP+(m.rise)*(1-k)*.9),"st")+ln(X(hw+t/2),Z(zP),X(-hw*k),Z(zP+(m.rise)*(1-k)*.9),"st");
+ g+=ln(X(0),Z(m.ridge),X(0),Z(zP+m.rise*.25),"st");
+ g+=ln(X(-hw*.5),Z(zP+m.rise*.5),X(hw*.5),Z(zP+m.rise*.5),"st");
+ // labels
+ g+=txt(X(-hw*.55),Z(m.Hw*.15),"NAVE FLOOR ±0.00","lbl")+txt(X(0),Z(ap)+16,"QUADRIPARTITE RIB VAULT","lbl");
+ g+=txt(X(hw*.3),Z(m.ridge-m.rise*.25),"OAK SCISSOR TRUSS","lbl","start")+txt(X(hw*.62),Z(m.Hw+m.rise*.62),"0.7 Cu ROOFING","lbl","start");
+ g+=txt(X(-hw-t-m.bd-2),Z(-1.2),"STRIP FOOTING","lbl","end")+txt(X(hw+t+m.bd+.6),Z(m.Hw*.4),"BUTTRESS","lbl","start");
+ // dims
+ g+=dim(X(-hw),Z(-2.2),X(hw),Z(-2.2),14,`${f1(m.Wn)} CLEAR`);
+ g+=dim(X(-hw-t),Z(m.Hw),X(-hw),Z(m.Hw),-10,`${f1(t)}`);
+ g+=dim(X(-hw-t-m.bd-1.5),Z(0),X(-hw-t-m.bd-1.5),Z(m.Hw),22,`EAVE ${f1(m.Hw)}`);
+ g+=dim(X(hw+t+m.bd+2),Z(0),X(hw+t+m.bd+2),Z(m.ridge),-22,`RIDGE ${f1(m.ridge)}`);
+ g+=dim(X(hw+t+m.bd+.2),Z(0),X(hw+t+m.bd+.2),Z(ap),-10,`VAULT ${f1(ap)}`);
+ // pitch angle arc
+ const ax=X(-hw-t/2),ay=Z(zP),ar=40;
+ g+=`<path class="dim" d="M${ax+ar},${ay} A${ar},${ar} 0 0 0 ${ax+ar*Math.cos(m.pt)},${ay-ar*Math.sin(m.pt)}"/>`+txt(ax+ar+6,ay-10,P.pitch.v+"°","dimt","start");
+ g+=txt(AREA.x,AREA.y+4,"SECTION A-A","ttl","start")+txt(AREA.x+120,AREA.y+4,"scale "+F.scaleTxt+" · cut through bay "+(Math.floor(m.n/2)+1),"lbl","start");
+ return sheet("RW-14-03","SECTION A-A",F.scaleTxt,g);}
+
+// ---------- sheet 4: south elevation ----------
+function sheetElev(m){
+ const ew=m.L+m.T+8, eh=m.tip+5;
+ const F=fit(ew,eh,AREA), s=F.s, ox=AREA.x+(AREA.w-ew*s)/2+4*s, gy=AREA.y+AREA.h-38;
+ const X=x=>ox+x*s, Z=z=>gy-z*s;
+ let g="";
+ g+=`<rect class="g ground" x="${X(-3)}" y="${Z(0)}" width="${(ew-2)*s}" height="6"/>`;
+ // roof band (seen from side): eave to ridge
+ g+=poly([[X(-.6),Z(m.Hw)],[X(m.L),Z(m.Hw)],[X(m.L),Z(m.ridge)],[X(0),Z(m.ridge)]],"roof");
+ for(let i=1;i<m.n*3;i++){const x=X(i*m.L/(m.n*3));g+=`<line class="rfx" x1="${x}" y1="${Z(m.Hw)}" x2="${x}" y2="${Z(m.ridge)}" stroke="#3f7d6a" stroke-width=".8"/>`;}
+ // nave wall
+ g+=poly([[X(0),Z(0)],[X(m.L),Z(0)],[X(m.L),Z(m.Hw)],[X(0),Z(m.Hw)]],"wall face");
+ // string course
+ g+=ln(X(0),Z(m.Hw*.25),X(m.L),Z(m.Hw*.25),"thin")+ln(X(0),Z(m.Hw-.5),X(m.L),Z(m.Hw-.5),"thin");
+ // windows with mullion
+ for(let i=0;i<m.n;i++){const w=m.bw*.36,u=i*m.bw+(m.bw-w)/2,z0=m.Hw*.28,h=m.Hw*.58;
+  g+=poly(lancet(u-.25,w+.5,z0-.25,h+.4).map(([a,b])=>[X(a),Z(b)]),"stone");
+  g+=poly(lancet(u,w,z0,h).map(([a,b])=>[X(a),Z(b)]),"glass");
+  g+=ln(X(u+w/2),Z(z0),X(u+w/2),Z(z0+h-w*.87),"thin");
+  g+=`<circle class="g stone" cx="${X(u+w/2)}" cy="${Z(z0+h-w*.62)}" r="${w*.18*s}"/>`;}
+ // buttresses
+ for(let i=0;i<=m.n;i++){const x=Math.min(Math.max(i*m.bw,.5),m.L-.5);
+  g+=poly([[X(x-.5),Z(0)],[X(x+.5),Z(0)],[X(x+.5),Z(m.Hw*.82)],[X(x),Z(m.Hw*.98)],[X(x-.5),Z(m.Hw*.82)]],"wall dark");
+  g+=ln(X(x-.5),Z(m.Hw*.45),X(x+.5),Z(m.Hw*.45),"thin");
+  g+=poly([[X(x-.25),Z(m.Hw)],[X(x+.25),Z(m.Hw)],[X(x),Z(m.Hw+2)]],"stone");}
+ // tower
+ const x0=m.L,x1=m.L+m.T;
+ g+=poly([[X(x0),Z(0)],[X(x1),Z(0)],[X(x1),Z(m.Ht)],[X(x0),Z(m.Ht)]],"wall");
+ for(const f of [.33,.66]) g+=ln(X(x0),Z(m.Ht*f),X(x1),Z(m.Ht*f),"thin");
+ // corner buttresses on tower
+ for(const xc of [x0,x1-.8]) g+=poly([[X(xc),Z(0)],[X(xc+.8),Z(0)],[X(xc+.8),Z(m.Ht*.9)],[X(xc),Z(m.Ht*.9)]],"wall dark");
+ // door
+ const dw=m.T*.3; g+=poly(lancet(x0+(m.T-dw)/2-.3,dw+.6,0,m.Ht*.17+.3).map(([a,b])=>[X(a),Z(b)]),"stone")+poly(lancet(x0+(m.T-dw)/2,dw,0,m.Ht*.17).map(([a,b])=>[X(a),Z(b)]),"glass");
+ // window mid & belfry pair
+ g+=poly(lancet(x0+m.T*.4,m.T*.2,m.Ht*.42,m.Ht*.18).map(([a,b])=>[X(a),Z(b)]),"glass");
+ for(const u of [.2,.58]){const bw=m.T*.22;g+=poly(lancet(x0+m.T*u,bw,m.Ht*.72,m.Ht*.2).map(([a,b])=>[X(a),Z(b)]),"glass");
+  for(let k=1;k<5;k++) g+=`<line class="rfx" x1="${X(x0+m.T*u)}" x2="${X(x0+m.T*u+bw)}" y1="${Z(m.Ht*.72+k*m.Ht*.025)}" y2="${Z(m.Ht*.72+k*m.Ht*.025)}" stroke="#7d6a52" stroke-width="1.2"/>`;}
+ // clock
+ g+=`<circle class="g stone" cx="${X(x0+m.T/2)}" cy="${Z(m.Ht*.64)}" r="${m.T*.11*s}"/>`+ln(X(x0+m.T/2),Z(m.Ht*.64),X(x0+m.T/2),Z(m.Ht*.64+m.T*.08),"thin")+ln(X(x0+m.T/2),Z(m.Ht*.64),X(x0+m.T/2+m.T*.06),Z(m.Ht*.64),"thin");
+ // parapet battlement
+ const nb=6;for(let i=0;i<nb;i++){if(i%2)continue;const a=x0+i*m.T/nb;g+=poly([[X(a),Z(m.Ht)],[X(a+m.T/nb),Z(m.Ht)],[X(a+m.T/nb),Z(m.Ht+.9)],[X(a),Z(m.Ht+.9)]],"wall");}
+ // spire + pinnacles
+ g+=poly([[X(x0+.6),Z(m.Ht)],[X(x1-.6),Z(m.Ht)],[X(x0+m.T/2),Z(m.tip)]],"roof");
+ g+=ln(X(x0+m.T/2),Z(m.tip),X(x0+m.T/2),Z(m.tip+1.6),"thin")+ln(X(x0+m.T/2-.5),Z(m.tip+1),X(x0+m.T/2+.5),Z(m.tip+1),"thin");
+ for(const xc of [x0+.4,x1-.4]) g+=poly([[X(xc-.4),Z(m.Ht+.9)],[X(xc+.4),Z(m.Ht+.9)],[X(xc),Z(m.Ht+m.spire*.2)]],"roof");
+ // lucarne on spire
+ g+=poly([[X(x0+m.T/2-.8),Z(m.Ht+m.spire*.22)],[X(x0+m.T/2+.8),Z(m.Ht+m.spire*.22)],[X(x0+m.T/2),Z(m.Ht+m.spire*.34)]],"stone");
+ // dims
+ g+=dim(X(0),Z(0),X(m.L),Z(0),26,`NAVE ${f1(m.L)}`)+dim(X(m.L),Z(0),X(x1),Z(0),26,`TOWER ${f1(m.T)}`);
+ for(let i=0;i<m.n;i++) g+=dim(X(i*m.bw),Z(0),X((i+1)*m.bw),Z(0),12,f1(m.bw));
+ g+=dim(X(-2),Z(0),X(-2),Z(m.Hw),18,`${f1(m.Hw)}`)+dim(X(-2),Z(m.Hw),X(-2),Z(m.ridge),18,`${f1(m.rise)}`);
+ g+=dim(X(x1+2),Z(0),X(x1+2),Z(m.Ht),-18,`${f1(m.Ht)}`)+dim(X(x1+2),Z(m.Ht),X(x1+2),Z(m.tip),-18,`${f1(m.spire)}`);
+ g+=dim(X(x1+5),Z(0),X(x1+5),Z(m.tip),-18,`TIP +${f1(m.tip)}`);
+ // level marks
+ for(const [z,l] of [[m.Hw,"EAVE"],[m.ridge,"RIDGE"]]) g+=`<path class="dim" d="M${X(-6)},${Z(z)}h-24m0,0l5,-5m-5,5l5,5"/>`+txt(X(-6)-26,Z(z)-4,`${l} +${f1(z)}`,"dimt","end");
+ g+=txt(AREA.x,AREA.y+4,"SOUTH ELEVATION","ttl","start")+txt(AREA.x+170,AREA.y+4,"scale "+F.scaleTxt,"lbl","start");
+ return sheet("RW-14-04","SOUTH ELEVATION",F.scaleTxt,g);}
+
+// ---------- render all ----------
+const main=document.getElementById("sheets");
+function draw(){const m=model();main.innerHTML=sheetIso(m)+sheetPlan(m)+sheetSection(m)+sheetElev(m);}
+draw();
+
+// ---------- modes & demo ----------
+const modes={wire:"bWire",struct:"bStruct",render:"bRender"};
+function setMode(k){document.body.classList.remove("mode-wire","mode-struct","mode-render");document.body.classList.add("mode-"+k);
+ for(const m in modes) document.getElementById(modes[m]).classList.toggle("on",m===k);}
+for(const m in modes) document.getElementById(modes[m]).onclick=()=>setMode(m);
+const stage=document.getElementById("stage");let timers=[];
+function say(t){stage.textContent=t;stage.classList.add("show");}
+document.getElementById("play").onclick=()=>{
+ timers.forEach(clearTimeout);timers=[];
+ setMode("wire");main.classList.remove("drawing");void main.offsetWidth;main.classList.add("drawing");
+ say("① 线框 WIREFRAME · 自动规划并逐线绘制");
+ timers.push(setTimeout(()=>{main.classList.remove("drawing");setMode("struct");say("② 结构剖面 STRUCTURE · 剖切砌体、桁架、拱肋");},3200));
+ timers.push(setTimeout(()=>{setMode("render");say("③ 上色渲染 RENDER · 红砖塔身 + 绿色铜屋顶");},6400));
+ timers.push(setTimeout(()=>stage.classList.remove("show"),9600));
+};
+document.getElementById("print").onclick=()=>window.print();
+const hm=location.hash.slice(1); if(modes[hm]) setMode(hm);
+</script>
+</body>
+</html>
